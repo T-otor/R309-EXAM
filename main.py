@@ -4,6 +4,7 @@ import time
 import logging
 import PyQt5
 import signal
+import threading
 import socket
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QMainWindow, QComboBox, QGridLayout, QMessageBox, QTextBrowser
 # Création fenètre chrono
@@ -47,51 +48,83 @@ class EcranPrincipal(QMainWindow):
         self.bouton_quitter.clicked.connect(self.quitter)
 
     def quitter(self):
-        client.send(b"bye")
-        self.close()
+        if srv == True:
+            client.send(b"bye")
+            self.close()
+        else:
+            self.close()
     
     def start_chrono(self):
         self.label2.setText("0")
-        self.bouton_start.setEnabled(False)
-        self.bouton_reset.setEnabled(True)
-        self.bouton_stop.setEnabled(True)
-        self.timer = PyQt5.QtCore.QTimer()
-        self.timer.start(1000)
-        self.timer.timeout.connect(self.update)
-        client.send(b"start clicked")
+        print(srv)
+        if srv == True:
+            client.send(b"start clicked")
+            self.bouton_start.setEnabled(False)
+            self.bouton_reset.setEnabled(True)
+            self.bouton_stop.setEnabled(True)
+            self.timer = PyQt5.QtCore.QTimer()
+            self.timer.start(1000)
+            self.timer.timeout.connect(self.update)
+        else:
+            self.bouton_start.setEnabled(False)
+            self.bouton_reset.setEnabled(True)
+            self.bouton_stop.setEnabled(True)
+            self.timer = PyQt5.QtCore.QTimer()
+            self.timer.start(1000)
+            self.timer.timeout.connect(self.update)
+        
+        
+    def start_thread(self):
+        self.thread = Thread()
+        self.thread.start()
+        self.thread.finished.connect(self.f__start)
     
     def stop_chrono(self):
         self.timer.stop()
-        self.bouton_start.setEnabled(True)
-        self.bouton_reset.setEnabled(True)
-        self.bouton_stop.setEnabled(False)
-        self.timer.stop()
-        client.send(self.label2.text().encode())
-        client.send(b"stop clicked")
+        print(srv)
+        if srv == True:
+            client.send(b"stop clicked")
+            client.send(self.label2.text().encode())
+            self.bouton_start.setEnabled(True)
+            self.bouton_reset.setEnabled(True)
+            self.bouton_stop.setEnabled(False)
+            self.timer.stop()
+        else:
+            self.bouton_start.setEnabled(True)
+            self.bouton_reset.setEnabled(True)
+            self.bouton_stop.setEnabled(False)
+            self.timer.stop()
+            
+        
         
     def update(self):
         self.label2.setText(str(int(self.label2.text()) + 1))
     
     def reset_chrono(self):
         self.label2.setText("0")
-        client.send(b"reset clicked")
+        print(srv)
+        if srv == True:
+            client.send(b"reset clicked")
 
     def connect(self):
         global client
+        global srv
         client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
             client.connect(("127.0.0.1", 10000))
             if client:
                 self.bouton_connect.setEnabled(False)
                 self.bouton_connect.setText("Connecté")
+                srv = True
+                print(srv)
+                return srv
+            return srv
         except socket.error:
-            QMessageBox.critical(self, "Erreur", "Impossible de se connecter au serveur")
-        
-        return False
-        
-
-
-
+            QMessageBox.critical(self, "Erreur", "Impossible dàe se connecter au serveur")
+        return srv
+    
+    def f__start(self):
+        self.thread.start()
 
 #Fermeture en cas de CTRL C
 def fermerClient():
@@ -103,9 +136,9 @@ def fermerClient():
 
 
 signal.signal(signal.SIGINT, fermerClient)
-
+srv = False
 if __name__ == '__main__':
-
+    
     app = QApplication(sys.argv)
 
     window = EcranPrincipal()
