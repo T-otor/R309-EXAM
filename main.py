@@ -74,6 +74,7 @@ class EcranPrincipal(QMainWindow):
     
     def reset_chrono(self):
         self.label2.setText("0")
+        client.send(b"reset clicked")
 
     def connect(self):
         global client
