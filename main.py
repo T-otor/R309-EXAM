@@ -72,12 +72,6 @@ class EcranPrincipal(QMainWindow):
             self.timer = PyQt5.QtCore.QTimer()
             self.timer.start(1000)
             self.timer.timeout.connect(self.update)
-        
-        
-    def start_thread(self):
-        self.thread = Thread()
-        self.thread.start()
-        self.thread.finished.connect(self.f__start)
     
     def stop_chrono(self):
         self.timer.stop()
